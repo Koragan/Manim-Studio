@@ -353,7 +353,7 @@
       const appendLog = t => { fullOutput += t; log.textContent += t; log.scrollTop = log.scrollHeight }
       appendLog(`$ manim ${args.join(' ')}\n\n`)
 
-      const proc = spawn('manim', args)
+      const proc = spawn('python3', ['-m', 'manim', ...args])
       proc.stdout.on('data', d => appendLog(d.toString()))
       proc.stderr.on('data', d => appendLog(d.toString()))
       proc.on('close', code => {
