@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Manim Studio</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    #topbar { background: #181825; border-bottom: 1px solid #313244; padding: 6px 14px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    #topbar h1 { font-size: 15px; color: #cba6f7; margin-right: auto; }
+    #current-file { font-size: 11px; color: #6c7086; margin-right: 8px; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .topbtn { background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 6px; padding: 4px 12px; font-size: 12px; cursor: pointer; }
+    .topbtn:hover { background: #45475a; }
+    .topbtn.danger { color: #f38ba8; border-color: #f38ba8; }
+    .topbtn.danger:hover { background: #f38ba822; }
+    #main { display: flex; flex: 1; overflow: hidden; }
+    .panel { display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid #313244; }
+    .panel:last-child { border-right: none; }
+    #panel-editor  { flex: 2; min-width: 200px; }
+    #panel-preview { flex: 2; min-width: 200px; background: #11111b; }
+    #panel-chat    { flex: 1; min-width: 220px; }
+    .panel-header { background: #181825; border-bottom: 1px solid #313244; padding: 6px 12px; font-size: 12px; font-weight: 600; color: #a6adc8; text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
+    .panel-header-btn { background: none; border: none; color: #6c7086; font-size: 11px; cursor: pointer; padding: 0; }
+    .panel-header-btn:hover { color: #f38ba8; background: none; }
+    .panel-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    #editor-container { width: 100%; height: 100%; }
+    #preview-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+    #preview-video { max-width: 100%; max-height: calc(100% - 150px); display: none; border-radius: 4px; }
+    #preview-image { max-width: 100%; max-height: calc(100% - 150px); display: none; border-radius: 4px; }
+    #preview-placeholder { color: #45475a; font-size: 13px; }
+    #preview-log { position: absolute; bottom: 0; left: 0; right: 0; background: #0d0d1a; color: #a6e3a1; font-family: monospace; font-size: 11px; padding: 6px 10px; max-height: 140px; overflow-y: auto; display: none; border-top: 1px solid #313244; }
+    #preview-spinner { display: none; color: #cba6f7; font-size: 13px; margin-bottom: 8px; }
+    #preview-badge { position: absolute; top: 8px; right: 8px; font-size: 10px; padding: 2px 8px; border-radius: 10px; display: none; background: #313244; color: #cba6f7; }
+    #chat-key-bar { display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid #313244; flex-shrink: 0; background: #181825; }
+    #chat-key-bar input { flex: 1; background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 6px; padding: 4px 8px; font-size: 12px; }
+    #chat-key-bar button { background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; }
+    #chat-key-bar button.set { background: #a6e3a1; color: #1e1e2e; border-color: #a6e3a1; }
+    #chat-messages { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+    .msg { padding: 8px 10px; border-radius: 8px; font-size: 13px; line-height: 1.5; word-break: break-word; white-space: pre-wrap; }
+    .msg.user   { background: #313244; align-self: flex-end; color: #cdd6f4; }
+    .msg.ai     { background: #1e1e2e; border: 1px solid #313244; color: #cdd6f4; }
+    .msg.system { color: #6c7086; font-size: 11px; font-style: italic; text-align: center; }
+    .msg code   { background: #11111b; padding: 2px 5px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+    .code-block { background: #11111b; border: 1px solid #313244; border-radius: 6px; padding: 8px; margin-top: 6px; font-family: monospace; font-size: 12px; white-space: pre; overflow-x: auto; color: #a6e3a1; }
+    .apply-btn { margin-top: 6px; background: #a6e3a1; color: #1e1e2e; border: none; border-radius: 6px; padding: 4px 12px; font-size: 12px; font-weight: 700; cursor: pointer; display: block; }
+    .apply-btn:hover { background: #cba6f7; }
+    #chat-input-bar { display: flex; gap: 6px; padding: 8px; border-top: 1px solid #313244; flex-shrink: 0; background: #181825; }
+    #chat-input { flex: 1; background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 6px; padding: 6px 10px; font-size: 13px; resize: none; font-family: 'Segoe UI', sans-serif; }
+    #chat-send { background: #cba6f7; color: #1e1e2e; border: none; border-radius: 6px; padding: 6px 12px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    #chat-send:hover { background: #b4befe; }
+    #chat-send:disabled { background: #45475a; color: #6c7086; cursor: not-allowed; }
+    #bottombar { background: #181825; border-top: 1px solid #313244; padding: 8px 14px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    button { background: #cba6f7; color: #1e1e2e; border: none; border-radius: 6px; padding: 6px 16px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    button:hover { background: #b4befe; }
+    button:disabled { background: #45475a; color: #6c7086; cursor: not-allowed; }
+    select { background: #313244; color: #cdd6f4; border: 1px solid #45475a; border-radius: 6px; padding: 5px 10px; font-size: 13px; cursor: pointer; }
+    #scene-label { font-size: 12px; color: #6c7086; }
+    #outdir { color: #6c7086; font-size: 12px; margin-left: auto; }
+  </style>
+</head>
+<body>
+
+  <div id="topbar">
+    <h1>🎬 Manim Studio</h1>
+    <span id="current-file">untitled.py</span>
+    <button class="topbtn" onclick="openFile()">📂 Open</button>
+    <button class="topbtn" onclick="saveFile()">💾 Save</button>
+    <button class="topbtn" onclick="saveFileAs()">💾 Save As</button>
+  </div>
+
+  <div id="main">
+    <div class="panel" id="panel-editor">
+      <div class="panel-header">📝 Editor</div>
+      <div class="panel-body" style="padding:0;">
+        <div id="editor-container"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-preview">
+      <div class="panel-header">🎥 Preview</div>
+      <div id="preview-body">
+        <div id="preview-spinner">⏳ Rendering…</div>
+        <video id="preview-video" controls></video>
+        <img    id="preview-image" />
+        <div id="preview-placeholder">Press ▶ Bake or ⚡ Frame</div>
+        <div id="preview-badge"></div>
+        <div id="preview-log"></div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-chat">
+      <div class="panel-header">
+        <span>🤖 AI Assistant (Groq)</span>
+        <button class="panel-header-btn" onclick="clearHistory()" title="Clear chat history">🗑 clear</button>
+      </div>
+      <div id="chat-key-bar">
+        <input id="key-input" type="password" placeholder="Paste Groq API key…" />
+        <button id="key-set-btn" onclick="setKey()">Set</button>
+      </div>
+      <div id="chat-messages"></div>
+      <div id="chat-input-bar">
+        <textarea id="chat-input" rows="2" placeholder="Ask about your Manim code…"></textarea>
+        <button id="chat-send" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="bottombar">
+    <button id="btn-bake">▶ Bake</button>
+    <button id="btn-frame" style="background:#313244; color:#a6e3a1; border:1px solid #45475a;">⚡ Frame</button>
+    <select id="sel-quality">
+      <option value="-ql">480p (low)</option>
+      <option value="-qm">720p (medium)</option>
+      <option value="-qh" selected>1080p (high)</option>
+      <option value="-qk">4K (ultra)</option>
+    </select>
+    <span id="scene-label">Scene:</span>
+    <select id="sel-scene"><option value="">— none detected —</option></select>
+    <span id="outdir">📁 Output: not set</span>
+    <button id="btn-dir" style="background:#313244; color:#cdd6f4;">📁 Choose</button>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron')
+    const { spawn }       = require('child_process')
+    const fs              = require('fs')
+    const path            = require('path')
+    const os              = require('os')
+
+    let monacoEditor = null
+    let groqKey      = ''
+    let chatHistory  = []
+    let outputDir    = path.join(os.homedir(), 'Videos', 'ManimStudio')
+    let currentFile  = null
+
+    // ── Persistence paths ─────────────────────────────────────
+    const configDir  = path.join(os.homedir(), '.manim-studio')
+    const configFile = path.join(configDir, 'config.json')
+    const histFile   = path.join(configDir, 'chat-history.json')
+    fs.mkdirSync(configDir, { recursive: true })
+
+    function loadConfig() {
+      try {
+        const c = JSON.parse(fs.readFileSync(configFile, 'utf8'))
+        if (c.groqKey)   groqKey   = c.groqKey
+        if (c.outputDir) outputDir = c.outputDir
+        if (c.lastFile)  currentFile = c.lastFile
+      } catch {}
+    }
+
+    function saveConfig() {
+      fs.writeFileSync(configFile, JSON.stringify({
+        groqKey, outputDir, lastFile: currentFile
+      }, null, 2), 'utf8')
+    }
+
+    function loadHistory() {
+      try {
+        return JSON.parse(fs.readFileSync(histFile, 'utf8'))
+      } catch { return [] }
+    }
+
+    function saveHistory() {
+      fs.writeFileSync(histFile, JSON.stringify(chatHistory, null, 2), 'utf8')
+    }
+
+    const qualityFolder = {
+      '-ql': '480p15', '-qm': '720p30',
+      '-qh': '1080p60', '-qk': '2160p60'
+    }
+
+    // ── Monaco ────────────────────────────────────────────────
+    const loaderScript = document.createElement('script')
+    loaderScript.src = 'node_modules/monaco-editor/min/vs/loader.js'
+    loaderScript.onload = () => {
+      require.config({ paths: { vs: 'node_modules/monaco-editor/min/vs' } })
+      require(['vs/editor/editor.main'], () => {
+        monacoEditor = monaco.editor.create(document.getElementById('editor-container'), {
+          value: [
+            'from manim import *',
+            '',
+            'class MyScene(Scene):',
+            '    def construct(self):',
+            '        circle = Circle()',
+            '        self.play(Create(circle))',
+            '        self.wait(1)',
+          ].join('\n'),
+          language: 'python',
+          theme: 'vs-dark',
+          fontSize: 14,
+          minimap: { enabled: false },
+          automaticLayout: true,
+        })
+        monacoEditor.onDidChangeModelContent(() => { scanScenes(); clearErrors() })
+        scanScenes()
+
+        // ── Boot: load config + history ───────────────────────
+        loadConfig()
+        setOutputDir(outputDir)
+
+        if (groqKey) {
+          document.getElementById('key-input').value = '••••••••••••••••'
+          const btn = document.getElementById('key-set-btn')
+          btn.textContent = '✓'; btn.className = 'set'
+        }
+
+        // Restore last file
+        if (currentFile && fs.existsSync(currentFile)) {
+          try {
+            monacoEditor.setValue(fs.readFileSync(currentFile, 'utf8'))
+            setCurrentFile(currentFile)
+            scanScenes()
+          } catch {}
+        }
+
+        // Restore chat history
+        chatHistory = loadHistory()
+        restoreChatUI()
+      })
+    }
+    document.head.appendChild(loaderScript)
+
+    // ── Restore chat messages into UI ─────────────────────────
+    function restoreChatUI() {
+      const box = document.getElementById('chat-messages')
+      box.innerHTML = ''
+      if (chatHistory.length === 0) {
+        addMessage('system', 'Chat history loaded. Ask me anything about your Manim code!')
+        return
+      }
+      chatHistory.forEach(msg => {
+        const role = msg.role === 'user' ? 'user' : 'ai'
+        const div  = document.createElement('div')
+        div.className = 'msg ' + role
+        if (role === 'ai') div.innerHTML = renderText(msg.content)
+        else div.textContent = msg.content
+        box.appendChild(div)
+      })
+      box.scrollTop = box.scrollHeight
+      addMessage('system', `↑ ${chatHistory.length} messages restored from last session`)
+    }
+
+    // ── Clear history ─────────────────────────────────────────
+    function clearHistory() {
+      if (!confirm('Clear all chat history?')) return
+      chatHistory = []
+      saveHistory()
+      const box = document.getElementById('chat-messages')
+      box.innerHTML = ''
+      addMessage('system', '🗑 Chat history cleared.')
+    }
+
+    // ── Error highlighting ────────────────────────────────────
+    function showErrors(fullOutput) {
+      if (!monacoEditor) return
+      const markers = []; const lineNums = []
+      const lineRe  = /File ".*?manim_studio_scene\.py", line (\d+)/g
+      let m
+      while ((m = lineRe.exec(fullOutput)) !== null) lineNums.push(parseInt(m[1]))
+      const lines  = fullOutput.split('\n').map(l => l.trim()).filter(Boolean)
+      const errMsg = lines[lines.length - 1] || 'Error'
+      lineNums.forEach(n => markers.push({ startLineNumber: n, startColumn: 1, endLineNumber: n, endColumn: 1000, message: errMsg, severity: monaco.MarkerSeverity.Error }))
+      if (markers.length > 0) { monaco.editor.setModelMarkers(monacoEditor.getModel(), 'manim-errors', markers); monacoEditor.revealLineInCenter(markers[0].startLineNumber) }
+    }
+
+    function clearErrors() {
+      if (monacoEditor) monaco.editor.setModelMarkers(monacoEditor.getModel(), 'manim-errors', [])
+    }
+
+    // ── Scene scanner ─────────────────────────────────────────
+    function scanScenes() {
+      if (!monacoEditor) return
+      const code    = monacoEditor.getValue()
+      const matches = [...code.matchAll(/^class\s+(\w+)\s*\([^)]*Scene[^)]*\)/gm)]
+      const scenes  = matches.map(m => m[1])
+      const sel     = document.getElementById('sel-scene')
+      const prev    = sel.value
+      sel.innerHTML = ''
+      if (scenes.length === 0) { sel.innerHTML = '<option value="">— none detected —</option>'; return }
+      scenes.forEach(name => { const o = document.createElement('option'); o.value = o.textContent = name; sel.appendChild(o) })
+      if (scenes.includes(prev)) sel.value = prev
+    }
+
+    // ── Preview helpers ───────────────────────────────────────
+    function resetPreview() {
+      document.getElementById('preview-video').style.display = 'none'
+      document.getElementById('preview-image').style.display = 'none'
+      document.getElementById('preview-placeholder').style.display = 'none'
+      document.getElementById('preview-badge').style.display = 'none'
+    }
+
+    function showBadge(text) {
+      const b = document.getElementById('preview-badge')
+      b.textContent = text; b.style.display = 'block'
+    }
+
+    // ── File helpers ──────────────────────────────────────────
+    function setCurrentFile(p) {
+      currentFile = p
+      document.getElementById('current-file').textContent = p ? path.basename(p) : 'untitled.py'
+      document.title = (p ? path.basename(p) : 'untitled') + ' — Manim Studio'
+      saveConfig()
+    }
+
+    async function openFile() {
+      const result = await ipcRenderer.invoke('open-file')
+      if (!result) return
+      monacoEditor.setValue(result.content)
+      setCurrentFile(result.filePath)
+      scanScenes()
+    }
+
+    async function saveFile() {
+      const saved = await ipcRenderer.invoke('save-file', { filePath: currentFile, content: monacoEditor.getValue() })
+      if (saved) setCurrentFile(saved)
+    }
+
+    async function saveFileAs() {
+      const saved = await ipcRenderer.invoke('save-file', { filePath: null, content: monacoEditor.getValue() })
+      if (saved) setCurrentFile(saved)
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveFile() }
+    })
+
+    // ── Output dir ────────────────────────────────────────────
+    function setOutputDir(dir) {
+      outputDir = dir
+      document.getElementById('outdir').textContent = '📁 ' + dir
+      saveConfig()
+    }
+
+    document.getElementById('btn-dir').addEventListener('click', async () => {
+      const dir = await ipcRenderer.invoke('pick-directory')
+      if (dir) setOutputDir(dir)
+    })
+
+    // ── Shared render runner ──────────────────────────────────
+    function runRender(args, onSuccess, onFail) {
+      const btn = document.getElementById('btn-bake')
+      const btnF = document.getElementById('btn-frame')
+      const log = document.getElementById('preview-log')
+      const spinner = document.getElementById('preview-spinner')
+      const ph = document.getElementById('preview-placeholder')
+
+      btn.disabled = true; btnF.disabled = true
+      log.style.display = 'block'; spinner.style.display = 'block'
+      ph.style.display = 'none'; log.textContent = ''
+      clearErrors()
+
+      let fullOutput = ''
+      const appendLog = t => { fullOutput += t; log.textContent += t; log.scrollTop = log.scrollHeight }
+      appendLog(`$ manim ${args.join(' ')}\n\n`)
+
+      const proc = spawn('manim', args)
+      proc.stdout.on('data', d => appendLog(d.toString()))
+      proc.stderr.on('data', d => appendLog(d.toString()))
+      proc.on('close', code => {
+        btn.disabled = false; btnF.disabled = false; spinner.style.display = 'none'
+        if (code === 0) onSuccess(fullOutput)
+        else { showErrors(fullOutput); onFail(fullOutput, code) }
+      })
+      proc.on('error', err => {
+        btn.disabled = false; btnF.disabled = false; spinner.style.display = 'none'
+        appendLog('\n❌ ' + err.message); onFail('', -1)
+      })
+    }
+
+    // ── Bake ─────────────────────────────────────────────────
+    document.getElementById('btn-bake').addEventListener('click', () => {
+      if (!monacoEditor) return
+      const className = document.getElementById('sel-scene').value
+      if (!className) { alert('No Scene class detected.'); return }
+      const tmpFile     = path.join(os.tmpdir(), 'manim_studio_scene.py')
+      const tmpBase     = 'manim_studio_scene'
+      fs.writeFileSync(tmpFile, monacoEditor.getValue(), 'utf8')
+      fs.mkdirSync(outputDir, { recursive: true })
+      const quality     = document.getElementById('sel-quality').value
+      const expectedMp4 = path.join(outputDir, 'videos', tmpBase, qualityFolder[quality], className + '.mp4')
+      resetPreview()
+      runRender([quality, '--media_dir', outputDir, tmpFile, className],
+        () => {
+          if (fs.existsSync(expectedMp4)) {
+            const v = document.getElementById('preview-video')
+            v.src = 'file://' + expectedMp4 + '?t=' + Date.now(); v.style.display = 'block'
+            showBadge('🎬 video')
+            document.getElementById('preview-log').textContent += '\n✅ Done! ' + expectedMp4
+          }
+        },
+        (out, code) => {
+          const ph = document.getElementById('preview-placeholder')
+          ph.textContent = '❌ Render failed — errors highlighted in editor'; ph.style.display = 'block'
+          document.getElementById('preview-log').textContent += '\n❌ Exit code: ' + code
+        }
+      )
+    })
+
+    // ── Frame preview ─────────────────────────────────────────
+    document.getElementById('btn-frame').addEventListener('click', () => {
+      if (!monacoEditor) return
+      const className = document.getElementById('sel-scene').value
+      if (!className) { alert('No Scene class detected.'); return }
+      const tmpFile = path.join(os.tmpdir(), 'manim_studio_scene.py')
+      const tmpBase = 'manim_studio_scene'
+      fs.writeFileSync(tmpFile, monacoEditor.getValue(), 'utf8')
+      fs.mkdirSync(outputDir, { recursive: true })
+      const expectedPng = path.join(outputDir, 'images', tmpBase, '480p15', className + '.png')
+      resetPreview()
+      runRender(['-ql', '-s', '--media_dir', outputDir, tmpFile, className],
+        () => {
+          let pngPath = expectedPng
+          if (!fs.existsSync(pngPath)) {
+            const imgDir = path.join(outputDir, 'images', tmpBase)
+            if (fs.existsSync(imgDir)) {
+              const found = fs.readdirSync(imgDir, { recursive: true }).map(f => path.join(imgDir, f)).find(f => f.endsWith('.png'))
+              if (found) pngPath = found
+            }
+          }
+          if (fs.existsSync(pngPath)) {
+            const img = document.getElementById('preview-image')
+            img.src = 'file://' + pngPath + '?t=' + Date.now(); img.style.display = 'block'
+            showBadge('🖼 frame')
+            document.getElementById('preview-log').textContent += '\n✅ Frame: ' + pngPath
+          }
+        },
+        () => {
+          const ph = document.getElementById('preview-placeholder')
+          ph.textContent = '❌ Frame render failed — check log'; ph.style.display = 'block'
+        }
+      )
+    })
+
+    // ── Groq key ──────────────────────────────────────────────
+    function setKey() {
+      const val = document.getElementById('key-input').value.trim()
+      if (!val) return
+      groqKey = val
+      document.getElementById('key-input').value = '••••••••••••••••'
+      const btn = document.getElementById('key-set-btn')
+      btn.textContent = '✓'; btn.className = 'set'
+      saveConfig()
+      addMessage('system', '✅ Groq key saved — ready to chat!')
+    }
+
+    function addMessage(role, text) {
+      const box = document.getElementById('chat-messages')
+      const div = document.createElement('div')
+      div.className = 'msg ' + role
+      if (role === 'ai') div.innerHTML = renderText(text)
+      else div.textContent = text
+      box.appendChild(div)
+      box.scrollTop = box.scrollHeight
+      return div
+    }
+
+    function renderText(text) {
+      const parts = text.split(/(```[\w]*\n[\s\S]*?```)/g)
+      let html = ''
+      parts.forEach(part => {
+        const cm = part.match(/```[\w]*\n([\s\S]*?)```/)
+        if (cm) {
+          const code = cm[1].trim()
+          const esc  = code.replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          html += `<div class="code-block">${esc}</div>`
+          html += `<button class="apply-btn" onclick="applyCode(this)" data-code="${encodeURIComponent(code)}">⚡ Apply to Editor</button>`
+        } else {
+          html += `<span>${part.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/`([^`]+)`/g,'<code>$1</code>')}</span>`
+        }
+      })
+      return html
+    }
+
+    function applyCode(btn) {
+      if (!monacoEditor) return
+      monacoEditor.setValue(decodeURIComponent(btn.getAttribute('data-code')))
+      addMessage('system', '⚡ Code applied to editor!')
+      scanScenes()
+    }
+
+    async function sendChat() {
+      if (!groqKey) { addMessage('system', '⚠️ Set your Groq key first.'); return }
+      const inputEl  = document.getElementById('chat-input')
+      const userText = inputEl.value.trim()
+      if (!userText) return
+      inputEl.value = ''
+      addMessage('user', userText)
+
+      const systemPrompt = `You are an expert Manim assistant inside Manim Studio IDE.
+When suggesting code, always use a python code block so the user can apply it with one click.
+
+Current editor code:
+\`\`\`python
+${monacoEditor ? monacoEditor.getValue() : ''}
+\`\`\``
+
+      chatHistory.push({ role: 'user', content: userText })
+      const sendBtn = document.getElementById('chat-send')
+      sendBtn.disabled = true; sendBtn.textContent = '…'
+      const typingDiv = addMessage('ai', '⏳ Thinking…')
+
+      try {
+        const res  = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + groqKey },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [{ role: 'system', content: systemPrompt }, ...chatHistory]
+          })
+        })
+        const data = await res.json()
+        if (!res.ok) {
+          typingDiv.textContent = '❌ API error: ' + (data?.error?.message || res.statusText)
+          chatHistory.pop()
+        } else {
+          const reply = data.choices?.[0]?.message?.content || '(no response)'
+          typingDiv.className = 'msg ai'
+          typingDiv.innerHTML = renderText(reply)
+          document.getElementById('chat-messages').scrollTop = 999999
+          chatHistory.push({ role: 'assistant', content: reply })
+          saveHistory()
+        }
+      } catch (err) {
+        typingDiv.textContent = '❌ Network error: ' + err.message
+        chatHistory.pop()
+      }
+      sendBtn.disabled = false; sendBtn.textContent = 'Send'
+    }
+
+    document.getElementById('chat-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat() }
+    })
+  </script>
+
+</body>
+</html>

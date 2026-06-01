@@ -1,0 +1,33 @@
+{
+  "name": "k's-manim-ide",
+  "version": "1.0.0",
+  "description": "A interface to write & edit python library Manim with preview & ai chat",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^42.2.0",
+    "electron-builder": "^26.8.1"
+  },
+  "dependencies": {
+    "monaco-editor": "^0.55.1"
+  },
+  "build": {
+    "appId": "com.koragan.manim-studio",
+    "productName": "Manim Studio",
+    "files": [
+      "main.js",
+      "index.html",
+      "node_modules/**/*"
+    ],
+    "linux": {
+      "target": "AppImage"
+    }
+   }
+  }
