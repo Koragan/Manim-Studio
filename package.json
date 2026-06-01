@@ -8,9 +8,9 @@
     "start": "electron .",
     "build": "electron-builder"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": "[\"manim\",\"animation\",\"ide\",\"electron\",\"ai\"]",
+  "author": "Koragan",
+  "license": "MIT",
   "devDependencies": {
     "electron": "^42.2.0",
     "electron-builder": "^26.8.1"
@@ -29,5 +29,9 @@
     "linux": {
       "target": "AppImage"
     }
-   }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Koragan/manim-studio"
   }
+}

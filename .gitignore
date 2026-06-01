@@ -1,21 +1,4 @@
-# Dependency directories
 node_modules/
-jspm_packages/
-
-# Build outputs
 dist/
-build/
-
-# Operating system files
-.DS_Store
-Thumbs.db
-
-# IDE and environment files
-.env
-.vscode/
-.idea/
-
-# Python / Manim temporary files
-__pycache__/
-*.pyc
-media/
+.manim-studio/
+*.AppImage
